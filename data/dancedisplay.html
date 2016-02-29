@@ -1,5 +1,6 @@
 <html>
   <head>
+    <title>DanceDisplay</title>
     <style>
       table {
         margin: 4em;
@@ -13,6 +14,10 @@
 
       th {
         text-align: left;
+      }
+
+      .hidden {
+        display: none;
       }
     </style>
 
@@ -56,8 +61,31 @@
 
       var lastResponse = null;
 
+      function addClass(node, className) {
+        if ('classList' in node) {
+            if (!node.classList.contains(className)) {
+                node.classList.add(className);
+            }
+        } else {
+            re = new RegExp('\\b' + className + '\\b', 'g');
+            if (!re.test(node.className)) {
+                node.className += " " + className;
+            }
+        }
+      }
+
+      function removeClass(node, className) {
+        if ('classList' in node) {
+            node.classList.remove(className);
+        } else {
+            node.className.replace(new RegExp('\\b' + className + '\\b', 'g'), '');
+        }
+      }
+
+
       function UpdateDom(data, idPrefix) {
-        for (name of ELEMENTS) {
+        for (var i = 0; i < ELEMENTS.length; i++) {
+          var name = ELEMENTS[i];
           var element = document.getElementById(idPrefix + name);
           if (!element) {
             continue;
@@ -65,12 +93,26 @@
 
           if (data) {
             if (data[name] in RHYTHMS) {
-              element.innerText = RHYTHMS[data[name]];
+              element.textContent = RHYTHMS[data[name]];
             } else {
-              element.innerText = data[name];
+              element.textContent = data[name];
             }
           } else {
-            element.innerText = "";
+            element.textContent = "";
+          }
+        }
+
+        var bys = document.getElementById(idPrefix + "table").getElementsByClassName("by");
+        if (!bys.length) {
+          return;
+        }
+
+        var artist = document.getElementById(idPrefix + "artist").textContent;
+        for (var i = 0; i < bys.length; i++) {
+          if (!artist) {
+            addClass(bys[i], 'hidden');
+          } else {
+            removeClass(bys[i], 'hidden');
           }
         }
       }
@@ -86,7 +128,7 @@
             setTimeout(Update, 10000);
           } else {
             setTimeout(Update, 1000);
-            
+
             var data = JSON.parse(req.responseText);
             if (data == lastResponse) {
               return;
@@ -96,7 +138,7 @@
             UpdateDom(data["next"], "next_");
           }
         };
-        req.open("GET", "http://localhost:5678/data.json");
+        req.open("GET", "http://localhost:5678/data.json", true);
         req.send();
       }
       Update();
@@ -104,11 +146,11 @@
   </head>
 
   <body>
-    <table>
+    <table id="now_table">
       <tr class="title">
         <th>Now Dancing</th>
         <th>
-          <span class="value" id="now_file_name"></span> by
+          <span class="value" id="now_file_name"></span> <span class="by hidden">by</span>
           <span class="value" id="now_artist"></span>
         </th>
       </tr>
@@ -131,11 +173,11 @@
       </tr>
     </table>
 
-    <table>
+    <table id="next_table">
       <tr class="title">
         <th>Up Next</th>
         <th>
-          <span class="value" id="next_file_name"></span> by
+          <span class="value" id="next_file_name"></span> <span class="by hidden">by</span>
           <span class="value" id="next_artist"></span>
         </th>
       </tr>
