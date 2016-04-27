@@ -1,15 +1,17 @@
+<!DOCTYPE html>
 <html>
   <head>
+    <meta charset="UTF-8" />
     <title>DanceDisplay</title>
     <style>
       table {
-        margin: 4em;
-        font-size: 3vh;
+        margin: 2em 3em 2.5em;
+        font-size: 3.75vh;
         font-family: sans;
       }
 
       th, td {
-        padding: 0.25em 1.5em;
+        padding: 0.25em 0.75em;
       }
 
       th {
@@ -22,42 +24,111 @@
     </style>
 
     <script>
-      var RHYTHMS = {
+    var RHYTHMS = {
         '2S': 'Two Step',
+        'AT': 'Argentine Tango',
         'AZ': 'Arizona Two Step',
+        'BA': 'Balboa',
+        'BC': 'Bachata',
+        'BE': 'Beguine',
+        'BN': 'Bossa Nova',
+        'BO': 'Bolero',
+        'BL': 'Blues',
         'CH': 'Cha Cha',
-        'CO': 'Cool Down',
+        'CO': 'Cool Down ',
+        'CS': 'Charleston',
+        'CU': 'Cumbia',
         'CW': 'Country Waltz',
         'EC': 'East Coast Swing',
+        'FS': 'Freestyle',
         'FX': 'Foxtrot',
         'HU': 'Hustle',
+        'JI': 'Jitterbug',
+        'JV': 'Jive',
+        'LH': 'Lindy Hop',
         'MA': 'Mambo',
         'ME': 'Merengue',
+        'MX': 'Mixed',
         'N2': 'Nightclub Two Step',
+        'PD': 'Paso Doble',
         'PO': 'Polka',
+        'RE': 'Reggaeton',
         'RU': 'Rumba',
         'QS': 'Quickstep',
+        'SA': 'Samba',
+        'SD': 'Shadow',
+        'SF': 'Slow Foxtrot',
+        'SG': 'Shag',
+        'SH': 'Shuffle',
         'SL': 'Slow Dance',
+        'SS': 'Salsa',
         'SW': 'Sway',
         'TA': 'Tango',
         'T2': 'Triple Two Step',
-        'VW': 'Viennese Waltz',
+        'VW': 'Vienesse Waltz',
         'WA': 'Waltz',
         'WC': 'West Coast Swing',
-        'XX': 'Novelty',
+        'XX': 'Undetermined',
+        'ZO': 'Zouk',
+    };
 
-        'B-': '',
-        'I-': '',
-        'P-': '', 
-      };
-      var ELEMENTS = [
-        "file_name",
-        "artist",
-        "intermediate",
-        "beginner",
-        "partner",
-        "lead_follow",
-      ];
+    var NOLINERS = ['B-', 'I-', 'P-'];
+
+    var RhythmHandler = {
+        set: function (value) {
+            if (value in RHYTHMS) {
+                return RHYTHMS[value];
+            }
+
+            return '';
+        }
+    };
+
+    var LineHandler = {
+        set: function (value) {
+            if (NOLINERS.indexOf(value) >= 0) {
+                return '';
+            }
+
+            return value;
+        }
+    };
+
+    var ArtistHandler = {
+        set: function (value, idPrefix) {
+            var bys = document.getElementById(idPrefix + 'table').getElementsByClassName('by');
+            if (!bys.length) {
+                return value;
+            }
+
+            for (var i = 0; i < bys.length; i++) {
+                if (!value) {
+                    addClass(bys[i], 'hidden');
+                } else {
+                    removeClass(bys[i], 'hidden');
+                }
+            }
+            return value;
+        },
+        reset: function (idPrefix) {
+            var bys = document.getElementById(idPrefix + 'table').getElementsByClassName('by');
+
+            for (var i = 0; i < bys.length; i++) {
+                addClass(bys[i], 'hidden');
+            }
+        }
+    };
+
+    var FIELDMAP = {
+        "file_name": {
+            set: function(value) { return value.replace(/\s+Edit$/ig, ''); },
+        },
+        "artist": ArtistHandler,
+        "intermediate": LineHandler,
+        "beginner": LineHandler,
+        "partner": LineHandler,
+        "lead_follow": RhythmHandler,
+    };
 
       var lastResponse = null;
 
@@ -83,42 +154,53 @@
       }
 
 
-      function UpdateDom(data, idPrefix) {
-        for (var i = 0; i < ELEMENTS.length; i++) {
-          var name = ELEMENTS[i];
-          var element = document.getElementById(idPrefix + name);
-          if (!element) {
-            continue;
-          }
-
-          if (data) {
-            if (data[name] in RHYTHMS) {
-              element.textContent = RHYTHMS[data[name]];
-            } else {
-              element.textContent = data[name];
+    function UpdateDom(data, idPrefix) {
+        for (name in FIELDMAP) {
+            var element = document.getElementById(idPrefix + name);
+            if (!element) {
+                continue;
             }
-          } else {
+
             element.textContent = "";
-          }
+            if (!data) {
+                if ('reset' in FIELDMAP[name]) {
+                    FIELDMAP[name].reset(idPrefix);
+                }
+                continue;
+            }
+
+            if (name in data) {
+                if (!FIELDMAP[name] || !('set' in FIELDMAP[name])) {
+                    element.textContent = data[name] ? data[name] : "";
+                    continue;
+                }
+
+                element.textContent = FIELDMAP[name].set(data[name], idPrefix);
+            }
+        }
+    }
+
+    function GetXHR() {
+        var req = null;
+
+        if (window.XMLHttpRequest) {
+            req = new XMLHttpRequest();
+        } else if (window.ActiveXObject) {
+            try {
+                req = new ActiveXObject('Msxml2.XMLHTTP');
+            } catch (e){
+                try {
+                    req = new ActiveXObject('Microsoft.XMLHTTP');
+                } catch (e) {}
+            }
         }
 
-        var bys = document.getElementById(idPrefix + "table").getElementsByClassName("by");
-        if (!bys.length) {
-          return;
-        }
-
-        var artist = document.getElementById(idPrefix + "artist").textContent;
-        for (var i = 0; i < bys.length; i++) {
-          if (!artist) {
-            addClass(bys[i], 'hidden');
-          } else {
-            removeClass(bys[i], 'hidden');
-          }
-        }
-      }
+        return req;
+    }
 
       function Update() {
-        var req = new XMLHttpRequest();
+        var req = GetXHR();
+
         req.onreadystatechange = function() {
           if (req.readyState != 4) {
             return;
