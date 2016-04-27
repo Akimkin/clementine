@@ -45,7 +45,10 @@ void DanceDisplay::ReadyRead() {
     } else if (path == "/data.json") {
       socket->write("HTTP/1.0 200 OK\r\n"
                     "Access-Control-Allow-Origin: *\r\n"
-                    "Content-Type: text/json;\r\n\r\n");
+                    "Content-Type: text/json;\r\n"
+                    "Cache-Control: no-store, no-cache, must-revalidate, max-age=0\r\n"
+                    "Pragma: no-cache\r\n"
+                    "Expires: Sat, 26 Jul 1997 05:00:00 GMT\r\n\r\n");
       socket->write(RenderJson());
     } else {
       socket->write("HTTP/1.0 404 Not Found\r\n\r\n");
